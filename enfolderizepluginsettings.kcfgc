@@ -1,0 +1,5 @@
+File=enfolderizepluginsettings.kcfg
+ClassName=EnfolderizePluginSettings
+Singleton=true
+Mutators=true
+
