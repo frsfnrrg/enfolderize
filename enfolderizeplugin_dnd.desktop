@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Service
+Name=Enfolderize_DND
+X-KDE-Library=enfolderizeplugin_dnd
+X-KDE-ServiceTypes=KonqDndPopupMenu/Plugin
+MimeType=application/octet-stream;inode/directory;
+

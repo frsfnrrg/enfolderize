@@ -1,12 +1,7 @@
-#ifndef ENFOLDERIZEPLUGIN_H
-#define ENFOLDERIZEPLUGIN_H
+#pragma once
 
 #include <kabstractfileitemactionplugin.h>
 #include <KUrl>
-
-
-//#include <konq_dndpopupmenuplugin.h>
-
 
 class KJob;
 class KDialog;
@@ -35,25 +30,3 @@ private slots:
     KUrl::List itemsToMove;
 };
 
-class EnfolderizeOperation : public QObject {
-    Q_OBJECT
-public:
-    EnfolderizeOperation(KUrl::List itemsToMove, QWidget* window);
-    void start();
-private slots:
-    void mkdirComplete(KJob * job);
-    void moveComplete(KJob * job);
-    void gotName();
-    void aborted();
-    void recordName(QString name);
-private:
-    void queryFolderName();
-
-    QString folderName;
-    KUrl targetFolder;
-    KUrl::List itemsToMove;
-    QWidget* window;
-    KDialog *nameDialog;
-};
-
-#endif // ENFOLDERIZEPLUGIN_H
