@@ -1,6 +1,7 @@
 [Desktop Entry]
 Type=Service
 Name=Enfolderize
-X-KDE-ServiceTypes=FileViewVersionControlPlugin
-MimeType=text/plain;
 X-KDE-Library=enfolderizeplugin
+X-KDE-ServiceTypes=KFileItemAction/Plugin
+MimeType=application/octet-stream;inode/directory;
+
