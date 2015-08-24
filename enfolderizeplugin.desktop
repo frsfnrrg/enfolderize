@@ -1,7 +1,8 @@
 [Desktop Entry]
+Encoding=UTF-8
 Type=Service
 Name=Enfolderize
 X-KDE-Library=enfolderizeplugin
-X-KDE-ServiceTypes=KFileItemAction/Plugin
+ServiceTypes=KFileItemAction/Plugin
 MimeType=application/octet-stream;inode/directory;
 

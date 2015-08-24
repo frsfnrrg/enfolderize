@@ -2,15 +2,11 @@
 #include "common.h"
 #include "flags.h"
 
+#include <QAction>
 #include <KFileItemListProperties>
-#include <KAction>
-
 #include <KPluginFactory>
-#include <KPluginLoader>
 
-K_PLUGIN_FACTORY(EnfolderizePluginFactory,
-                 registerPlugin<EnfolderizePlugin_RMenu>();)
-K_EXPORT_PLUGIN(EnfolderizePluginFactory("enfolderizeplugin"))
+K_PLUGIN_FACTORY_WITH_JSON(EnfolderizePluginFactory, "enfolderizeplugin.json", registerPlugin<EnfolderizePlugin_RMenu>();)
 
 EnfolderizePlugin_RMenu::EnfolderizePlugin_RMenu(QObject *parent,
                                                  const QList<QVariant> &args)
@@ -51,3 +47,6 @@ void EnfolderizePlugin_RMenu::act() {
         new EnfolderizeOperation(itemsToMove, mainWindow);
     op->start();
 }
+
+#include "enfolderizeplugin.moc"
+

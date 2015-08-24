@@ -1,42 +1,61 @@
 #include "flags.h"
 #include "common.h"
 
-#include <KLineEdit>
-#include <QVBoxLayout>
-#include <KAction>
+#include <QtWidgets/QLineEdit>
+#include <QtWidgets/QVBoxLayout>
+#include <QtWidgets/QAction>
+#include <QtWidgets/QDialogButtonBox>
+#include <QtWidgets/QPushButton>
+#include <QtWidgets/QLabel>
 
 #include <KIO/CopyJob>
-#include <KIO/Job>
-#include <kio/fileundomanager.h>
 #include <KIO/JobUiDelegate>
+#include <KIO/Job>
+#include <KIO/FileUndoManager>
 
-KAction *makeEnfolderizeAction(QObject *parent) {
+#include <KGuiItem>
+#include <KJobWidgets>
+
+QAction *makeEnfolderizeAction(QObject *parent) {
+    return new QAction(QIcon::fromTheme(QStringLiteral("draw-spiral")),
 #if DEBUG
-    const QString actionName("Enfolderize (" __TIME__ ")");
+                       QStringLiteral actionName("Enfolderize (" __TIME__ ")")
 #else
-    const QString actionName("Place in New Folder");
+                       QStringLiteral("Place in New Folder"),
 #endif
-    return new KAction(KIcon("draw-spiral"), actionName, parent);
+                       parent);
 }
 
-KUrl parentOfUrls(KUrl::List x) {
+QUrl directoryOf(const QUrl& u) {
+    QUrl u2 = u.adjusted(QUrl::StripTrailingSlash);
+    return u2.adjusted(QUrl::RemoveFilename);
+}
+
+QUrl appendToFolder(const QUrl& u, const QString& s) {
+    QUrl u2 = u;
+    u2.setPath(u.path(QUrl::EncodeReserved).append(QChar::fromLatin1('/')) + s);
+    return u2;
+}
+
+QUrl parentOfUrls(QList<QUrl> x) {
     if (x.isEmpty()) {
-        return KUrl();
+        return QUrl();
     }
     // list is not empty
     QString scheme = x[0].scheme();
     QString authority = x[0].authority();
 
-    QStringList dir = x[0].directory().split('/', QString::SkipEmptyParts);
+
+    QStringList dir = directoryOf(x[0]).path().split(QChar::fromLatin1('/'), QString::SkipEmptyParts);
 
     for (int i = 1; i < x.length(); i++) {
-        const KUrl url = x.at(i);
+        const QUrl url = x.at(i);
         if (url.scheme() != scheme || url.authority() != authority) {
-            return KUrl();
+            return QUrl();
         }
         QStringList merge;
         const QStringList ud =
-            url.directory().split('/', QString::SkipEmptyParts);
+            directoryOf(url).path().split(QChar::fromLatin1('/'), QString::SkipEmptyParts);
 
         QStringList::const_iterator uend = ud.constEnd();
         QStringList::const_iterator dend = dir.constEnd();
@@ -51,15 +70,15 @@ KUrl parentOfUrls(KUrl::List x) {
         }
         dir = merge;
     }
-    KUrl final;
-    final.setPath("/" + dir.join("/"));
+    QUrl final;
+    final.setPath(dir.join(QChar::fromLatin1('/')).prepend(QChar::fromLatin1('/')));
     final.setScheme(scheme);
     final.setAuthority(authority);
     return final;
 }
 
-EnfolderizeOperation::EnfolderizeOperation(KUrl::List items, QWidget *win,
-                                           KUrl target) {
+EnfolderizeOperation::EnfolderizeOperation(QList<QUrl> items, QWidget *win,
+                                           QUrl target) {
     itemsToMove = items;
     targetFolder = target;
     window = win;
@@ -73,17 +92,24 @@ void EnfolderizeOperation::gotName() {
                    SLOT(aborted()));
     }
 
-    targetFolder.addPath(folderName);
+
+    QUrl intermediateFolder = appendToFolder(targetFolder, folderName);
+#if DEBUG
+    qDebug("%s + %s -> %s", targetFolder.toString().toUtf8().constData(),
+           folderName.toUtf8().constData(),
+           intermediateFolder.toString().toUtf8().constData());
+#endif
+    targetFolder = intermediateFolder;
 
     KIO::SimpleJob *job = KIO::mkdir(targetFolder);
     QObject::connect(job, SIGNAL(finished(KJob *)), this,
                      SLOT(mkdirComplete(KJob *)));
     KIO::FileUndoManager::self()->recordJob(KIO::FileUndoManager::Mkdir,
-                                            KUrl::List(), targetFolder, job);
+                                            QList<QUrl>(), targetFolder, job);
     job->setProperty("isMkdirJob",
-                     true); // KDE5: cast to MkdirJob in slotResult instead
+                     true);
     if (window) {
-        job->ui()->setWindow(window);
+        KJobWidgets::setWindow(job, window);
     }
     job->ui()->setAutoErrorHandlingEnabled(false);
 }
@@ -93,29 +119,36 @@ void EnfolderizeOperation::aborted() { delete this; }
 void EnfolderizeOperation::recordName(QString name) { folderName = name; }
 
 void EnfolderizeOperation::queryFolderName() {
-    // See kdelibs/kfile/knewfilemenu.cpp for model
     // TODO: eventually, apply i18n
-    nameDialog = new KDialog(window);
+    nameDialog = new QDialog(window);
     nameDialog->setModal(true);
     nameDialog->setAttribute(Qt::WA_DeleteOnClose);
-    nameDialog->setButtons(KDialog::Ok | KDialog::Cancel);
-    nameDialog->setCaption("New Folder for Items");
 
-    KLineEdit *lineEdit = new KLineEdit();
-    lineEdit->setClearButtonShown(true);
-    lineEdit->setText("New Folder");
+    QDialogButtonBox *buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok|QDialogButtonBox::Cancel);
+
+    QPushButton* m_okButton = buttonBox->button(QDialogButtonBox::Ok);
+    m_okButton->setDefault(true);
+    m_okButton->setShortcut(Qt::CTRL | Qt::Key_Return);
+    connect(m_okButton, SIGNAL(clicked(bool)), nameDialog, SLOT(accept()));
+    connect(buttonBox->button(QDialogButtonBox::Cancel), SIGNAL(clicked(bool)), nameDialog, SLOT(reject()));
+
+    nameDialog->setWindowTitle(QStringLiteral("New Folder for Items"));
+
+    QLineEdit *lineEdit = new QLineEdit();
+    lineEdit->setClearButtonEnabled(true);
+    lineEdit->setText(QStringLiteral("New Folder"));
     connect(lineEdit, SIGNAL(textChanged(QString)), this,
             SLOT(recordName(QString)));
     recordName(lineEdit->text());
 
-    QWidget *central = new QWidget(nameDialog);
-    QVBoxLayout *layout = new QVBoxLayout(central);
+    QVBoxLayout *layout = new QVBoxLayout();
     layout->addWidget(
-        new QLabel(QString("Create new folder to hold %1 files in %2").arg(
+        new QLabel(QStringLiteral("Create new folder to hold %1 files in %2").arg(
             QString::number(itemsToMove.size()), targetFolder.path())));
     layout->addWidget(lineEdit);
+    layout->addWidget(buttonBox);
 
-    nameDialog->setMainWidget(central);
+    nameDialog->setLayout(layout);
     connect(nameDialog, SIGNAL(accepted()), this, SLOT(gotName()));
     connect(nameDialog, SIGNAL(destroyed(QObject *)), this, SLOT(aborted()));
 
@@ -127,6 +160,11 @@ void EnfolderizeOperation::queryFolderName() {
 void EnfolderizeOperation::start() {
     if (targetFolder.isEmpty()) {
         targetFolder = parentOfUrls(itemsToMove);
+#if DEBUG
+        qDebug("%s : %s %s", targetFolder.toString().toUtf8().constData(),
+               itemsToMove[0].toString().toUtf8().constData(),
+               itemsToMove[1].toString().toUtf8().constData());
+#endif
         if (targetFolder.isEmpty()) {
             // i.e, common folder procedure failed
             delete this;
@@ -151,7 +189,7 @@ void EnfolderizeOperation::mkdirComplete(KJob *oldjob) {
                                             itemsToMove, targetFolder, copyjob);
     copyjob->setProperty("isCopyJob", true);
     if (window) {
-        copyjob->ui()->setWindow(window);
+        KJobWidgets::setWindow(copyjob, window);
     }
     QObject::connect(copyjob, SIGNAL(result(KJob *)), this,
                      SLOT(moveComplete(KJob *)));

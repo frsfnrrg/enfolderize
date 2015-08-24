@@ -1,17 +1,20 @@
 #pragma once
 
-#include <KUrl>
+#define slots
 
-class KAction;
-class KDialog;
+#include <QtCore/QUrl>
+#include <QtCore/QObject>
+
+class QAction;
+class QDialog;
 class KJob;
 
-KAction* makeEnfolderizeAction(QObject* parent);
+QAction* makeEnfolderizeAction(QObject* parent);
 
 class EnfolderizeOperation : public QObject {
     Q_OBJECT
 public:
-    EnfolderizeOperation(KUrl::List itemsToMove, QWidget* window=0, KUrl targetFolder=KUrl());
+    EnfolderizeOperation(QList<QUrl> itemsToMove, QWidget* window=0, QUrl targetFolder=QUrl());
     void start();
 private slots:
     void mkdirComplete(KJob * job);
@@ -23,8 +26,8 @@ private:
     void queryFolderName();
 
     QString folderName;
-    KUrl targetFolder;
-    KUrl::List itemsToMove;
+    QUrl targetFolder;
+    QList<QUrl> itemsToMove;
     QWidget* window;
-    KDialog *nameDialog;
+    QDialog *nameDialog;
 };

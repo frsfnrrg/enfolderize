@@ -1,38 +1,68 @@
-cmake_minimum_required(VERSION 2.8.8)
+cmake_minimum_required(VERSION 2.8.12 FATAL_ERROR)
 project(enfolderizeplugin)
 
-find_package(KDE4 REQUIRED)
-find_package(LibKonq REQUIRED)
-include(KDE4Defaults)
-include(MacroLibrary)
+set(QT_MIN_VERSION "5.0.0")
+set(KF5_MIN_VERSION "5.0.0")
+set(ECM_MIN_VERSION "0.0.11")
 
-add_definitions (${QT_DEFINITIONS} ${KDE4_DEFINITIONS})
+find_package(ECM ${ECM_MIN_VERSION} CONFIG REQUIRED)
+set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake)
+
+include(FeatureSummary)
+include(KDEInstallDirs)
+include(KDECMakeSettings)
+include(KDECompilerSettings)
+include(KDEFrameworkCompilerSettings)
+include(ECMMarkNonGuiExecutable)
+
+
+find_package(Qt5 ${QT_MIN_VERSION} CONFIG REQUIRED COMPONENTS
+    Core
+    Widgets
+)
+
+find_package(KF5 ${KF5_MIN_VERSION} REQUIRED COMPONENTS
+    I18n
+    KIO
+)
+
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
+
 add_definitions(-DQT_USE_FAST_CONCATENATION -DQT_USE_FAST_OPERATOR_PLUS)
-include_directories (${CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR} ${KDE4_INCLUDES} ${KDEPIMLIBS_INCLUDE_DIR})
-include_directories( ${KDE4_INCLUDE_DIR} ${QT_INCLUDES} ${LIBKONQ_INCLUDE_DIR} ${QIMAGEBLITZ_INCLUDES} )
 
 set(CMAKE_AUTOMOC ON)
 
-add_library(common OBJECT common.cpp)
-SET_TARGET_PROPERTIES(common PROPERTIES
-  COMPILE_FLAGS "-fPIC"
-)
+# add_library(common OBJECT common.cpp)
+# set_target_properties(common PROPERTIES POSITION_INDEPENDENT_CODE ON)  
 
 set(enfolderizeplugin_SRCS
     enfolderizeplugin.cpp
-    $<TARGET_OBJECTS:common>)
+     common.cpp)
+#     $<TARGET_OBJECTS:common>)
 set(enfolderizeplugin_dnd_SRCS
     enfolderizeplugin_dnd.cpp
-    $<TARGET_OBJECTS:common>)
+     common.cpp)
+#      $<TARGET_OBJECTS:common>)
+         
+add_library(enfolderizeplugin MODULE ${enfolderizeplugin_SRCS})
+add_library(enfolderizeplugin_dnd MODULE ${enfolderizeplugin_dnd_SRCS})
 
-kde4_add_plugin(enfolderizeplugin  ${enfolderizeplugin_SRCS})
-kde4_add_plugin(enfolderizeplugin_dnd  ${enfolderizeplugin_dnd_SRCS})
+kcoreaddons_desktop_to_json(enfolderizeplugin enfolderizeplugin.desktop)
+kcoreaddons_desktop_to_json(enfolderizeplugin_dnd enfolderizeplugin_dnd.desktop)
 
-target_link_libraries(enfolderizeplugin ${KDE4_KIO_LIBS} ${LIBKONQ_LIBRARY})
-target_link_libraries(enfolderizeplugin_dnd ${KDE4_KIO_LIBS} ${LIBKONQ_LIBRARY})
+set(myactionplugin_SRCS myactionplugin.cpp)
 
-install(FILES enfolderizeplugin.desktop DESTINATION ${SERVICES_INSTALL_DIR})
-install(FILES enfolderizeplugin_dnd.desktop DESTINATION ${SERVICES_INSTALL_DIR})
+target_link_libraries(enfolderizeplugin
+    KF5::KIOWidgets
+)
+target_link_libraries(enfolderizeplugin_dnd
+    KF5::KIOWidgets
+)
 
-install(TARGETS enfolderizeplugin DESTINATION ${PLUGIN_INSTALL_DIR})
-install(TARGETS enfolderizeplugin_dnd DESTINATION ${PLUGIN_INSTALL_DIR})
+install(FILES enfolderizeplugin.desktop DESTINATION ${KDE_INSTALL_KSERVICES5DIR})
+install(FILES enfolderizeplugin_dnd.desktop DESTINATION ${KDE_INSTALL_KSERVICES5DIR})
+
+install(TARGETS enfolderizeplugin DESTINATION ${KDE_INSTALL_PLUGINDIR})
+install(TARGETS enfolderizeplugin_dnd DESTINATION ${KDE_INSTALL_PLUGINDIR})
+
+feature_summary(WHAT ALL FATAL_ON_MISSING_REQUIRED_PACKAGES)

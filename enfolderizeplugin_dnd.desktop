@@ -1,7 +1,8 @@
 [Desktop Entry]
+Encoding=UTF-8
 Type=Service
 Name=Enfolderize_DND
 X-KDE-Library=enfolderizeplugin_dnd
-X-KDE-ServiceTypes=KonqDndPopupMenu/Plugin
+ServiceTypes=kf5/kio_dnd
 MimeType=application/octet-stream;inode/directory;
 

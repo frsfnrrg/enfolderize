@@ -2,19 +2,18 @@
 #include "common.h"
 #include "flags.h"
 
+#include <QAction>
+
 #include <KFileItemListProperties>
-#include <KAction>
-
 #include <KPluginFactory>
-#include <KPluginLoader>
 
-K_PLUGIN_FACTORY(EnfolderizePluginDNDFactory,
-                 registerPlugin<EnfolderizePlugin_DND>();)
-K_EXPORT_PLUGIN(EnfolderizePluginDNDFactory("enfolderizeplugin_dnd"))
+K_PLUGIN_FACTORY_WITH_JSON(EnfolderizePluginDNDFactory,
+                      "enfolderizeplugin_dnd.json",
+                    registerPlugin<EnfolderizePlugin_DND>();)
 
 EnfolderizePlugin_DND::EnfolderizePlugin_DND(QObject *parent,
                                              const QList<QVariant> &args)
-    : KonqDndPopupMenuPlugin(parent) {
+    : KIO::DndPopupMenuPlugin(parent) {
     Q_UNUSED(args);
     action = 0;
 }
@@ -25,22 +24,22 @@ EnfolderizePlugin_DND::~EnfolderizePlugin_DND() {
     }
 }
 
-void EnfolderizePlugin_DND::setup(const KFileItemListProperties &popupMenuInfo,
-                                  KUrl destination,
-                                  QList<QAction *> &pluginActions) {
+QList<QAction *> EnfolderizePlugin_DND::setup(const KFileItemListProperties &popupMenuInfo,
+                                  const QUrl& destination) {
+
     itemsToMove = popupMenuInfo.urlList();
     targetFolder = destination;
 
     // only enfolderize multiple items
     if (itemsToMove.size() < MIN_NUMBER_OF_OBJECTS) {
-        return;
+        return QList<QAction* >();
     }
 
     if (!action) {
         action = makeEnfolderizeAction(this);
         connect(action, SIGNAL(triggered(bool)), SLOT(act()));
     }
-    pluginActions.append(action);
+    return  QList<QAction *>() << action;
 }
 
 void EnfolderizePlugin_DND::act() {
@@ -49,3 +48,5 @@ void EnfolderizePlugin_DND::act() {
         new EnfolderizeOperation(itemsToMove, 0, targetFolder);
     op->start();
 }
+
+#include "enfolderizeplugin_dnd.moc"

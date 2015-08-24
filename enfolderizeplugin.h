@@ -1,7 +1,9 @@
 #pragma once
 
+#define slots
+
 #include <kabstractfileitemactionplugin.h>
-#include <KUrl>
+#include <QUrl>
 
 class KJob;
 class KDialog;
@@ -17,9 +19,8 @@ class EnfolderizePlugin_RMenu : public KAbstractFileItemActionPlugin {
     EnfolderizePlugin_RMenu(QObject *parent, const QList<QVariant> &args);
     virtual ~EnfolderizePlugin_RMenu();
 
-    virtual QList<QAction *>
-    actions(const KFileItemListProperties &fileItemInfos,
-            QWidget *parentWidget);
+    QList<QAction *> actions(const KFileItemListProperties &fileItemInfos,
+            QWidget *parentWidget) override;
 
 private slots:
     void act();
@@ -27,6 +28,6 @@ private slots:
   private:
     QWidget* mainWindow;
     QAction* action;
-    KUrl::List itemsToMove;
+    QList<QUrl> itemsToMove;
 };
 
